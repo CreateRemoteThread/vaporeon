@@ -20,7 +20,11 @@ def extract_calls(fn,c_src,parent,db):
     if node.type == "call_expression":
       function_node = node.child_by_field_name("function")
       arguments_node = node.child_by_field_name("arguments")
-      db.execute("INSERT INTO calls (src, dest) VALUES (?,?)",(parent,get_node_text(function_node,c_src) if function_node else "<unknown>"))
+      if function_node:
+        fn_dest = get_node_text(function_node,c_src).decode("utf-8").strip()
+      else:
+        fn_dest = "<unknown>"
+      db.execute("INSERT INTO calls (src, dest) VALUES (?,?)",(parent,fn_dest))
       # calls.append({
       #   "name":get_node_text(function_node,c_src) if function_node else None,
       #   "expression":get_node_text(node,c_src)
@@ -47,7 +51,7 @@ def extract_functions(fn,c_src,db):
             return result
         return None
       if declarator:
-        function_name = find_identifier(declarator)
+        function_name = find_identifier(declarator).decode("utf-8").strip()
       if function_name is None:
         function_name = "<unknown>"
       node_text = get_node_text(node,c_src)
