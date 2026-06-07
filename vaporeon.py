@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import readline
 import getopt
 from tree_sitter import Language, Parser
 import tree_sitter_c as tsc
@@ -47,4 +48,5 @@ if __name__ == "__main__":
       core.mcp.start_mcp()
     else:
       core.index._load_index(CFG_LOAD)
+      core.index.run_cli()
       # core.loadIndex(CFG_LOAD)

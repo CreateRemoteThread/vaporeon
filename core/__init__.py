@@ -13,7 +13,7 @@ parser.language = Language(tsc.language())
 def get_node_text(node,c_src):
   return c_src[node.start_byte:node.end_byte]
 
-def extract_calls(fn,c_src,parent,db):
+def extract_calls(fn,c_src,parent,parent_name,db):
   tree = parser.parse(c_src)
   # calls = []
   def visit(node):
@@ -24,7 +24,7 @@ def extract_calls(fn,c_src,parent,db):
         fn_dest = get_node_text(function_node,c_src).decode("utf-8").strip()
       else:
         fn_dest = "<unknown>"
-      db.execute("INSERT INTO calls (src, dest) VALUES (?,?)",(parent,fn_dest))
+      db.execute("INSERT INTO calls (srcid,src, dest) VALUES (?,?,?)",(parent,parent_name,fn_dest))
       # calls.append({
       #   "name":get_node_text(function_node,c_src) if function_node else None,
       #   "expression":get_node_text(node,c_src)
@@ -51,9 +51,11 @@ def extract_functions(fn,c_src,db):
             return result
         return None
       if declarator:
-        function_name = find_identifier(declarator).decode("utf-8").strip()
+        function_name = find_identifier(declarator)
       if function_name is None:
         function_name = "<unknown>"
+      else:
+        function_name = function_name.decode("utf-8").strip()
       node_text = get_node_text(node,c_src)
       db.execute("INSERT INTO functions (name,file,start,end) VALUES (?,?,?,?)",(function_name,fn,node.start_byte, node.end_byte))
       # functions.append({
@@ -62,7 +64,7 @@ def extract_functions(fn,c_src,db):
       #   "end_line": node.end_point[0] + 1,
       #   "source": node_text,
       # })
-      extract_calls(fn,node_text,parent=db.lastrowid,db=db)
+      extract_calls(fn,node_text,parent=db.lastrowid,parent_name=function_name,db=db)
       # print(extract_calls(get_node_text(node, c_src)))
     for child in node.children:
       visit(child)
@@ -77,7 +79,7 @@ def createIndex(index_dir,index_db):
   conn = sqlite3.connect(index_db)
   cur = conn.cursor()
   cur.execute("CREATE TABLE IF NOT EXISTS functions (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, file TEXT NOT NULL, start INTEGER NOT NULL, end INTEGER NOT NULL)")
-  cur.execute("CREATE TABLE IF NOT EXISTS calls (id INTEGER PRIMARY KEY AUTOINCREMENT, src INTEGER NOT NULL, dest TEXT NOT NULL)")
+  cur.execute("CREATE TABLE IF NOT EXISTS calls (id INTEGER PRIMARY KEY AUTOINCREMENT, srcid INTEGER NOT NULL, src TEXT NOT NULL, dest TEXT NOT NULL)")
   max_count = len(files)
   i = 1
   for f in files:
@@ -85,6 +87,6 @@ def createIndex(index_dir,index_db):
     i += 1
     with open(f,"rb") as fp:
       extract_functions(f,fp.read(),db=cur)
-      conn.commit()
+  conn.commit()
   conn.close() 
 
