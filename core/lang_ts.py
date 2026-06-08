@@ -29,16 +29,16 @@ def _extract_functions(fn,ts_src,db,parser):
   def find_name(node):
     name_node = node.child_by_field_name("name")
     if name_node:
-      return _get_node_text(name_node,ts_src)
+      return _get_node_text(name_node,ts_src).decode("utf-8")
     parent = node.parent
     if parent and parent.type == "variable_declarator":
       name_node = parent.child_by_field_name("name")
       if name_node:
-        return _get_node_text(name_node,ts_src)
+        return _get_node_text(name_node,ts_src).decode("utf-8")
     elif parent and parent.type == "pair":
       key_node = parent.child_by_field_name("key")
       if key_node:
-        return _get_node_text(key_node,ts_src)     
+        return _get_node_text(key_node,ts_src).decode("utf-8")
     return "<anonymous>"
   def visit(node):
     function_node_types = {

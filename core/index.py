@@ -132,6 +132,18 @@ def createIndex(index_dir,index_db):
   conn.commit()
   conn.close() 
 
+def get_src(fn_name):
+  global cur
+  cur.execute("select * from functions where name = '%s';" % fn_name)
+  rows = cur.fetchall()
+  if len(rows) == 0:
+    __internal_print("error: fn not found")
+    return None  
+  for (id,name,file,start,end) in rows:
+    with open(file,"rb") as f:
+      fn_src = f.read()[start:end]
+    __internal_print(fn_src.decode("utf-8"))
+    
 def run_cli():
   while True:
     in_cmd = input(" > ").strip()
@@ -161,3 +173,6 @@ def run_cli():
     elif tokens[0] == ".paths_to" and len(tokens) == 2:
       __internal_print("info: called .paths_to('%s')" % tokens[1])
       paths_to(tokens[1])
+    elif tokens[0] == ".src" and len(tokens) == 2:
+      __internal_print("info: called .src('%s')" % tokens[1])
+      get_src(tokens[1])

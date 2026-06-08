@@ -35,7 +35,7 @@ def _extract_functions(fn,c_src,db,parser):
       # Walk down nested declarators to find the identifier
       def find_identifier(n):
         if n.type == "identifier":
-          return _get_node_text(n, c_src)
+          return _get_node_text(n, c_src).decode("utf-8")
         for child in n.children:
           result = find_identifier(child)
           if result:
@@ -46,7 +46,7 @@ def _extract_functions(fn,c_src,db,parser):
       if function_name is None:
         function_name = "<unknown>"
       else:
-        function_name = function_name.decode("utf-8").strip()
+        function_name = function_name.strip()
       node_text = _get_node_text(node,c_src)
       db.execute("INSERT INTO functions (name,file,start,end) VALUES (?,?,?,?)",(function_name,fn,node.start_byte, node.end_byte))
       # functions.append({
