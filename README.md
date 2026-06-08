@@ -44,6 +44,13 @@ function getPIIParameters(): PluginParameters {
 
 Similarly, .paths_to and .paths_from can analyze call paths to and from a given function. This aims to answer, "can I start at X function and touch Y function". This is still a work in progress, and has tons of dumb corner cases. This isn't taint-tracking by any means.
 
+This can be invoked as an stdio-transport MCP server using --mcp:
+
+```
+# note - just an example, redactpii looks reasonable (but idk typescript)
+./harness.py -p "Use the provided tools to navigate the source code for portkey. Look for vulnerabilities which related to the function 'redactPii'. Use xrefs_to and xrefs_from to get related functions."  --mcp "/software/vaporeon/vaporeon.py -d /data/portkey_ts.db --mcp --lang ts" --model gpt-5.4
+```
+
 It is not perfect by a long shot - but right now, we do not care, because it is better than having AI stumble through files with ripgrep and glob.
 
 You probably shouldn't be here, you probably want /r/vibecoding instead.
