@@ -134,7 +134,15 @@ def createIndex(index_dir,index_db):
 
 def get_src(fn_name):
   global cur
-  cur.execute("select * from functions where name = '%s';" % fn_name)
+  fn_name_int = 0
+  try:
+    fn_name_int = int(fn_name)
+  except:
+    pass
+  if fn_name_int != 0:
+    cur.execute("select * from functions where id = ?",(fn_name_int,))
+  else:
+    cur.execute("select * from functions where name = ?",(fn_name,))
   rows = cur.fetchall()
   if len(rows) == 0:
     __internal_print("error: fn not found")
