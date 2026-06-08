@@ -4,16 +4,16 @@
 
 Docs: [database](docs/DB.md)
 
-Vaporeon is a simple tree-sitter based Python app, which reads through a directory of C code and attempts to create a call database (of which functions call which other functions). To use this, start by indexing a folder of source code:
+Vaporeon is a simple tree-sitter based Python app, which reads through a directory of C code and attempts to create a call database (of which functions call which other functions). To use this, start by indexing a folder of source code (c, cpp, ts and tsx are support for --lang):
 
 ```
-./vaporeon.py -i ~/data/qemu -d ~/data/qemu_src.db"
+./vaporeon.py --lang c -i ~/data/qemu -d ~/data/qemu_src.db"
 ```
 
 Now, you can access the database and attempt to map "hot paths" through a codebase:
 
 ```
-./vaporeon.py -l ~/data/qemu_src.db
+./vaporeon.py --lang c -l ~/data/qemu_src.db
  > .xrefs_from transaction_action
 info: called .xrefs_from('transaction_action')
 (446, 59, 'transaction_action', 'external_snapshot_action')

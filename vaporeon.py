@@ -2,13 +2,11 @@
 
 import readline
 import getopt
-from tree_sitter import Language, Parser
-import tree_sitter_c as tsc
 import glob
 import os
 import sys
 import sqlite3
-import core
+# import core
 import core.mcp
 import core.index
 
@@ -16,6 +14,7 @@ CFG_INDEX = None
 CFG_INDEXDIR = None
 CFG_LOAD = None
 CFG_MCP = False
+CFG_LANG = None
 
 def usage():
   print("index a folder: ./vaporeon -i [dir] -d [save.db]")
@@ -25,7 +24,7 @@ if __name__ == "__main__":
   if len(sys.argv) == 1:
     usage()
     sys.exit(0)
-  args, opts = getopt.getopt(sys.argv[1:],"d:i:l:",["dir=","index=","load=","mcp"])
+  args, opts = getopt.getopt(sys.argv[1:],"d:i:l:",["dir=","index=","load=","mcp","lang="])
   for arg,val in args:
     if arg in ["-i","--index"]:
       CFG_INDEX = val
@@ -35,13 +34,19 @@ if __name__ == "__main__":
       CFG_INDEXDIR = val
     elif arg == "--mcp":
       CFG_MCP = True
+    elif arg == "--lang":
+      CFG_LANG = val
   # sanity:
+  if CFG_LANG is None:
+    print("fatal: you must specify --lang")
+    sys.exit(-1)
   if CFG_INDEX is not None and CFG_LOAD is not None:
     print("fatal: you cannot have both -i and -l, choose one")
-    sys.exit(0)
-  elif CFG_INDEX is not None:
-    core.createIndex(CFG_INDEX,CFG_INDEXDIR)
-    sys.exit(0)
+    sys.exit(-1)
+  core.index._set_lang(CFG_LANG)
+  if CFG_INDEX is not None:
+    core.index.createIndex(CFG_INDEX,CFG_INDEXDIR)
+    sys.exit(-1)
   elif CFG_LOAD is not None:
     if CFG_MCP is True:
       core.index._load_index(CFG_LOAD)
@@ -49,4 +54,3 @@ if __name__ == "__main__":
     else:
       core.index._load_index(CFG_LOAD)
       core.index.run_cli()
-      # core.loadIndex(CFG_LOAD)

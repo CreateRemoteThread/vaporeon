@@ -3,9 +3,36 @@
 import sqlite3
 import sys
 from typing import Annotated
+from tree_sitter import Language, Parser
+import glob
+import os
 
 conn = None
 cur = None
+fs_ext = []
+
+def _set_lang(lang):
+  global parser, fs_ext
+  parser = Parser()
+  if lang == "c":
+    import tree_sitter_c
+    parser.language = Language(tree_sitter_c.language())
+    fs_ext = ["*.c","*.h"]
+  elif lang == "cpp":
+    import tree_sitter_cpp
+    parser.language = Language(tree_sitter_cpp.language())
+    fs_ext = ["*.c","*.h","*.cpp","*.hpp"]
+  elif lang == "tsx":
+    import tree_sitter_typescript
+    parser.language = Language(tree_sitter_typescript.language_tsx())
+    fs_ext = ["*.tsx"]
+  elif lang == "ts":
+    import tree_sitter_typescript
+    parser.language = Language(tree_sitter_typescript.language_typescript())
+    fs_ext = ["*.ts"]
+
+def _get_node_text(node,c_src):
+  return c_src[node.start_byte:node.end_byte]
 
 def paths_from(fn: Annotated[str, "Function to get paths from"]):
   paths = []  
@@ -67,6 +94,86 @@ def xrefs_to(fn: Annotated[str, "Function to get xrefs to"]):
     print(row)
   return rows
 xrefs_to.__doc__ = "Find what calls a function."
+
+def _extract_calls(fn,c_src,parent,parent_name,db):
+  tree = parser.parse(c_src)
+  # calls = []
+  def visit(node):
+    if node.type == "call_expression":
+      function_node = node.child_by_field_name("function")
+      arguments_node = node.child_by_field_name("arguments")
+      if function_node:
+        fn_dest = _get_node_text(function_node,c_src).decode("utf-8").strip()
+      else:
+        fn_dest = "<unknown>"
+      db.execute("INSERT INTO calls (srcid,src, dest) VALUES (?,?,?)",(parent,parent_name,fn_dest))
+      # calls.append({
+      #   "name":_get_node_text(function_node,c_src) if function_node else None,
+      #   "expression":_get_node_text(node,c_src)
+      # })
+    for child in node.children:
+      visit(child)
+  visit(tree.root_node)
+  # return calls
+
+def _extract_functions(fn,c_src,db):
+  tree = parser.parse(c_src)
+  functions = []
+  def visit(node):
+    if node.type == "function_definition":
+      declarator = node.child_by_field_name("declarator")
+      function_name = None
+      # Walk down nested declarators to find the identifier
+      def find_identifier(n):
+        if n.type == "identifier":
+          return _get_node_text(n, c_src)
+        for child in n.children:
+          result = find_identifier(child)
+          if result:
+            return result
+        return None
+      if declarator:
+        function_name = find_identifier(declarator)
+      if function_name is None:
+        function_name = "<unknown>"
+      else:
+        function_name = function_name.decode("utf-8").strip()
+      node_text = _get_node_text(node,c_src)
+      db.execute("INSERT INTO functions (name,file,start,end) VALUES (?,?,?,?)",(function_name,fn,node.start_byte, node.end_byte))
+      # functions.append({
+      #   "name": function_name,
+      #   "start_line": node.start_point[0] + 1,
+      #   "end_line": node.end_point[0] + 1,
+      #   "source": node_text,
+      # })
+      _extract_calls(fn,node_text,parent=db.lastrowid,parent_name=function_name,db=db)
+      # print(_extract_calls(_get_node_text(node, c_src)))
+    for child in node.children:
+      visit(child)
+  visit(tree.root_node)
+
+def createIndex(index_dir,index_db):
+  global fs_ext
+  print("info: calling createIndex('%s','%s')" % (index_dir,index_db))
+  if index_db is None:
+    print("fatal: supply a db filename with -d")
+    sys.exit(-1)
+  files = []
+  for ext in fs_ext:
+    files += [ f for f in glob.glob(index_dir + "/**/" + ext,recursive=True) if os.path.isfile(f)]
+  conn = sqlite3.connect(index_db)
+  cur = conn.cursor()
+  cur.execute("CREATE TABLE IF NOT EXISTS functions (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, file TEXT NOT NULL, start INTEGER NOT NULL, end INTEGER NOT NULL)")
+  cur.execute("CREATE TABLE IF NOT EXISTS calls (id INTEGER PRIMARY KEY AUTOINCREMENT, srcid INTEGER NOT NULL, src TEXT NOT NULL, dest TEXT NOT NULL)")
+  max_count = len(files)
+  i = 1
+  for f in files:
+    print("info: analyzing '%s' [%d/%d]" % (f,i,max_count))
+    i += 1
+    with open(f,"rb") as fp:
+      _extract_functions(f,fp.read(),db=cur)
+  conn.commit()
+  conn.close() 
 
 def run_cli():
   while True:
