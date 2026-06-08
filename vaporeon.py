@@ -49,6 +49,7 @@ if __name__ == "__main__":
     sys.exit(-1)
   elif CFG_LOAD is not None:
     if CFG_MCP is True:
+      core.index._cfg_mcp = True
       core.index._load_index(CFG_LOAD)
       core.mcp.start_mcp()
     else:

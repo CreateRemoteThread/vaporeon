@@ -30,6 +30,8 @@ info: called .xrefs_from('transaction_action')
 (457, 59, 'transaction_action', 'g_assert_not_reached')
 ```
 
+Similarly, .paths_to and .paths_from can analyze call paths to and from a given function. This aims to answer, "can I start at X function and touch Y function"
+
 This identifies all (single-depth) calls made from transaction_action.
 
 It is not perfect by a long shot - but right now, we do not care, because it is better than having AI stumble through files with ripgrep and glob.
