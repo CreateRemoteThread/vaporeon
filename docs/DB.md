@@ -20,4 +20,3 @@ CREATE TABLE IF NOT EXISTS calls(
 ```
 
 The functions table allows us to fetch functions from source code (by specifying filename, begin and end bytes). The calls table links source functions (via functions.id) to destinations (text: because not everything has an id, and because we must handle the case of names overlapping)
-

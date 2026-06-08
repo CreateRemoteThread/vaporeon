@@ -95,18 +95,30 @@ def xrefs_from(fn: Annotated[str, "Function to get xrefs from"]):
   global cur
   cur.execute("select * from calls where src = ?",(fn,))
   rows = cur.fetchall()
+  if len(rows) == 0:
+    __internal_print("done: no xrefs from '%s'" % fn)
+    return "done: no xrefs from '%s'" % fn
+  out = []
   for row in rows:
+    (id,srcid,src,dest) = row
+    out.append(dest)
     __internal_print(row)
-  return rows
+  return "xrefs from '%s': " % fn + ",".join(out)
 xrefs_from.__doc__ = "Find what a function calls."
 
 def xrefs_to(fn: Annotated[str, "Function to get xrefs to"]):
   global cur
   cur.execute("select * from calls where dest = ?",(fn,))
   rows = cur.fetchall()
+  if len(rows) == 0:
+    __internal_print("done: no xrefs to '%s'" % fn)
+    return "done: no xrefs to '%s'" % fn
+  out = []
   for row in rows:
+    (id,srcid,src,dest) = row
+    out.append(src)
     __internal_print(row)
-  return rows
+  return "xrefs to '%s': " % fn + ",".join(out)
 xrefs_to.__doc__ = "Find what calls a function."
 
 def createIndex(index_dir,index_db):
@@ -132,13 +144,16 @@ def createIndex(index_dir,index_db):
   conn.commit()
   conn.close() 
 
-def get_src(fn_name):
+def get_src(fn_name: Annotated[str,"function name"]):
   global cur
   fn_name_int = 0
   try:
     fn_name_int = int(fn_name)
   except:
     pass
+  if fn_name in ["<anonymous>","<unknown>"]:
+    __internal_print("error: cannot get src for anonymous or unknown function")
+    return "error: cannot get_src of anonymous or unknown function"
   if fn_name_int != 0:
     cur.execute("select * from functions where id = ?",(fn_name_int,))
   else:
@@ -146,12 +161,19 @@ def get_src(fn_name):
   rows = cur.fetchall()
   if len(rows) == 0:
     __internal_print("error: fn not found")
-    return None  
+    return "error: fn not found (possibly a library function?)"
+  out = "" 
   for (id,name,file,start,end) in rows:
     with open(file,"rb") as f:
       fn_src = f.read()[start:end]
     __internal_print(fn_src.decode("utf-8"))
-    
+    out += "fn: %s file: %s start: %s\n" % (fn_name,file,start)
+    out += fn_src.decode("utf-8")
+  if len(out) == 0:
+    return "error: fn found, but no src results"
+  return out
+get_src.__doc__ = "Get the source code for a function"
+  
 def run_cli():
   while True:
     in_cmd = input(" > ").strip()
