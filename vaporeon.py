@@ -26,9 +26,9 @@ if __name__ == "__main__":
   args, opts = getopt.getopt(sys.argv[1:],"d:i:l:",["db=","index=","load=","mcp","lang="])
   for arg,val in args:
     if arg in ["-i","--index"]:
-      CFG_INDEX = val
+      CFG_INDEX = os.path.expanduser(val)
     elif arg in ["-d","--db"]:
-      CFG_INDEXDB = val
+      CFG_INDEXDB = os.path.expanduser(val)
     elif arg == "--mcp":
       CFG_MCP = True
     elif arg == "--lang":

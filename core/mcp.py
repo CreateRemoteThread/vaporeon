@@ -4,7 +4,7 @@ import json
 import sys
 import inspect
 # import core.index
-from core.index import get_src, xrefs_to, xrefs_from
+from core.index import get_src, xrefs_to, xrefs_from, find_fn
 from typing import Annotated, get_args, get_origin
 
 def get_flag(key: Annotated[str,"Use the key '456' to get a flag"]):
@@ -14,7 +14,7 @@ def get_flag(key: Annotated[str,"Use the key '456' to get a flag"]):
     return "Nope"
 get_flag.__doc__ = "Use this function to get a flag!"
 
-GLOBAL_FNS = [get_src,xrefs_to,xrefs_from]
+GLOBAL_FNS = [get_src,xrefs_to,xrefs_from,find_fn]
 
 def fn_to_tool_json(fn,tag=None):
     """

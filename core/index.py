@@ -31,10 +31,12 @@ def _set_lang(lang):
     fs_ext = ["*.c","*.h"]
     import core.lang_c
     _extract_functions = core.lang_c._extract_functions
-  elif lang == "cpp":
-    import tree_sitter_cpp
-    parser.language = Language(tree_sitter_cpp.language())
-    fs_ext = ["*.c","*.h","*.cpp","*.hpp"]
+  elif lang == "cs":
+    import tree_sitter_c_sharp
+    parser.language = Language(tree_sitter_c_sharp.language())
+    fs_ext = ["*.cs"]
+    import core.lang_cs
+    _extract_functions = core.lang_cs._extract_functions
   elif lang == "tsx":
     import tree_sitter_typescript
     parser.language = Language(tree_sitter_typescript.language_tsx())
@@ -143,6 +145,19 @@ def createIndex(index_dir,index_db):
       _extract_functions(f,fp.read(),db=cur,parser=parser)
   conn.commit()
   conn.close() 
+
+def find_fn(fn_name: Annotated[str,"String to search for"]):
+  global cur
+  cur.execute("select * from functions where name like ?",("%%%s%%" % fn_name,))
+  rows = cur.fetchall()
+  if len(rows) == 0:
+    return "0 functions found"
+  else:
+    out = []
+    for (id,fn_name,file,start,end) in rows:
+      out.append(fn_name)
+  return "ok: %d results found\n" % len(out) + ",".join(out)
+find_fn.__doc__ = "Find functions whose name contains a string"
 
 def get_src(fn_name: Annotated[str,"function name"]):
   global cur

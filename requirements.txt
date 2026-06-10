@@ -1,3 +1,5 @@
 tree-sitter
 tree-sitter-c
 tree-sitter-cpp
+tree-sitter-typescript
+tree-sitter-c-sharp
